@@ -38,6 +38,10 @@ function M.SellExtraItem(ItemsToBuy)
 			M.SellSpecifiedItem("item_ring_of_aquila")
 			M.SellSpecifiedItem("item_quelling_blade")
 			M.SellSpecifiedItem("item_soul_ring")
+			M.SellSpecifiedItem("item_buckler")
+			M.SellSpecifiedItem("item_ring_of_basilius")
+			M.SellSpecifiedItem("item_headdress")
+			
 
 		end
 		if(GameTime()>40*60 or level>=20)
@@ -69,29 +73,53 @@ function M.SellExtraItem(ItemsToBuy)
 
 end
 
+function isLeaf (Node)
+    local recipe = GetItemComponents(Node)
+    if next(recipe) == nil then
+        return true
+    else
+        return false
+    end
+end
+
+function nextNodes (Node)
+    local recipe = GetItemComponents(Node)
+    return recipe[1]
+end
+
 function M.Transfer(itemtable)
     local output = {}
-    for key, value in pairs(itemtable) do
-        if type(value) == "table" then
-            for k,v in pairs(value) do
-                local recipe = GetItemComponents(v)
-                if next(recipe) == nil then
-                    table.insert(output, v)
-                else
-                    local new = M.Transfer(recipe)
-                    for k2, v2 in pairs(new) do
-                        table.insert(output, v2)
-                    end
-                end
-            end
+    for k1, v1 in pairs(itemtable) do
+        if isLeaf(v1) then
+            table.insert(output, v1)
         else
-            local recipe = GetItemComponents(value)
-            if next(recipe) == nil then
-                table.insert(output, value)
-            else
-                local new = M.Transfer(recipe)
-                for k3, v3 in pairs(new) do
-                    table.insert(output, v3)
+            for k2, v2 in pairs(nextNodes(v1)) do
+                if isLeaf(v2) then
+                    table.insert(output, v2)
+                else
+                    for k3, v3 in pairs(nextNodes(v2)) do
+                        if isLeaf(v3) then
+                            table.insert(output, v3)
+                        else
+                            for k4, v4 in pairs(nextNodes(v3)) do
+                                if isLeaf(v4) then
+                                    table.insert(output, v4)
+                                else
+                                    for k5, v5 in pairs(nextNodes(v4)) do
+                                        if isLeaf(v5) then
+                                            table.insert(output, v5)
+                                        else
+                                            for k6, v6 in pairs(nextNodes(v5)) do
+                                                if isLeaf(v6) then
+                                                    table.insert(output, v6)
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -303,7 +331,7 @@ function M.WeNeedTpscroll()
 
 	-- Count current number of TP scrolls
 	local iScrollCount = 0;
-	for i = 0, 15 do
+	for i = 0, 16 do
 		local sCurItem = npcBot:GetItemInSlot(i);
 		if ( sCurItem ~= nil and sCurItem:GetName() == "item_tpscroll" ) then
 			iScrollCount = iScrollCount+sCurItem:GetCurrentCharges()
@@ -623,5 +651,33 @@ function M.HaveGem()
 	end
 	return false
 end
+
+key = ""
+function M.PrintTable(table , level)
+  level = level or 1
+  local indent = ""
+  for i = 1, level do
+    indent = indent.."  "
+  end
+
+  if key ~= "" then
+    print(indent..key.." ".."=".." ".."{")
+  else
+    print(indent .. "{")
+  end
+
+  key = ""
+  for k,v in pairs(table) do
+     if type(v) == "table" then
+        key = k
+        PrintTable(v, level + 1)
+     else
+        local content = string.format("%s%s = %s", indent .. "  ",tostring(k), tostring(v))
+      print(content)  
+      end
+  end
+  print(indent .. "}")
+
+end  ------function for printing table
 
 return M
