@@ -218,29 +218,104 @@ local dota2team = {
 		};
 		['sponsorship'] = '';
 	},
+	-- Ti 10
+	[19] = {
+		['name'] = "Team Spirit TI10";
+		['alias'] = "TS";
+		['players'] = {
+			'Yatoro',
+			'TORONTOTOKYO',
+			'Collapse',
+			'Mira',
+			'Miposhka'
+		};
+		['sponsorship'] = '';
+	},
+	[20] = {
+		['name'] = "PSG.LGD TI10";
+		['alias'] = "LGD";
+		['players'] = {
+			'Ame',
+			'NothingToSay',
+			'Faith_bian',
+			'XinQ',
+			'y`'
+		};
+		['sponsorship'] = '';
+	},
+	-- Ti 11
+	[21] = {
+		['name'] = "Tundra Esports TI11";
+		['alias'] = "Tundra";
+		['players'] = {
+			'skiter',
+			'Nine',
+			'33',
+			'Saksa',
+			'Sneyking'
+		};
+		['sponsorship'] = '';
+	},
+	[22] = {
+		['name'] = "Team Secret TI11";
+		['alias'] = "Secret";
+		['players'] = {
+			'Crystallis',
+			'Nisha',
+			'Resolut1on',
+			'W_Zayac',
+			'Puppey'
+		};
+		['sponsorship'] = '';
+	},
+	-- TI12
+	[23] = {
+		['name'] = "Team Spirit TI12";
+		['alias'] = "TS";
+		['players'] = {
+			'Yatoro',
+			'Larl',
+			'Collapse',
+			'Mira',
+			'Miposhka'
+		};
+		['sponsorship'] = '';
+	},
+	[24] = {
+		['name'] = "Gaimin Gladiators TI12";
+		['alias'] = "GG";
+		['players'] = {
+			'dyrachyo',
+			'Quinn',
+			'Ace',
+			'tOfu',
+			'Seleri'
+		};
+		['sponsorship'] = '';
+	}
 }
 
-local sponsorship = {"RMMAI"};
+local sponsorship = { "RMMAI" };
 
 function U.GetDota2Team()
 	local bot_names = {};
-	local rand = RandomInt(1, #dota2team); 
-	local srand = RandomInt(1, #sponsorship); 
+	local rand = RandomInt(1, #dota2team);
+	local srand = RandomInt(1, #sponsorship);
 	if GetTeam() == TEAM_RADIANT then
-		while rand%2 ~= 0 do
-			rand = RandomInt(1, #dota2team); 
+		while rand % 2 ~= 0 do
+			rand = RandomInt(1, #dota2team);
 		end
 	else
-		while rand%2 ~= 1 do
-			rand = RandomInt(1, #dota2team); 
+		while rand % 2 ~= 1 do
+			rand = RandomInt(1, #dota2team);
 		end
 	end
 	local team = dota2team[rand];
-	for _,player in pairs(team.players) do
+	for _, player in pairs(team.players) do
 		if team.sponsorship == "" then
-			table.insert(bot_names, team.alias.."."..player.."."..sponsorship[srand]);
+			table.insert(bot_names, team.alias .. "." .. player .. "." .. sponsorship[srand]);
 		else
-			table.insert(bot_names, team.alias.."."..player.."."..team.sponsorship);
+			table.insert(bot_names, team.alias .. "." .. player .. "." .. team.sponsorship);
 		end
 	end
 	return bot_names;

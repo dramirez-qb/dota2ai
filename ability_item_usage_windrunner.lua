@@ -6,37 +6,43 @@
 --------------------------------------
 -- General Initialization
 --------------------------------------
-local utility = require( GetScriptDirectory().."/utility" ) 
-require(GetScriptDirectory() ..  "/ability_item_usage_generic")
+local utility = require(GetScriptDirectory() .. "/utility")
+local ability_item_usage_generic = require(GetScriptDirectory() .. "/ability_item_usage_generic")
+local AbilityExtensions = require(GetScriptDirectory() .. "/util/AbilityAbstraction")
 
-local debugmode=false
+local debugmode = false
 local npcBot = GetBot()
-local Talents ={}
-local Abilities ={}
-local AbilitiesReal ={}
+if npcBot == nil or npcBot:IsIllusion() then
+	return
+end
 
-ability_item_usage_generic.InitAbility(Abilities,AbilitiesReal,Talents) 
+local Talents = {}
+local Abilities = {}
+local AbilitiesReal = {}
 
-local AbilityToLevelUp=
+ability_item_usage_generic.InitAbility(Abilities, AbilitiesReal, Talents)
+
+
+local AbilityToLevelUp =
 {
 	Abilities[3],
 	Abilities[2],
 	Abilities[2],
 	Abilities[1],
 	Abilities[2],
-	Abilities[4],
+	Abilities[5],
 	Abilities[2],
 	Abilities[3],
 	Abilities[3],
 	"talent",
 	Abilities[3],
-	Abilities[4],
+	Abilities[5],
 	Abilities[1],
 	Abilities[1],
 	"talent",
 	Abilities[1],
 	"nil",
-	Abilities[4],
+	Abilities[5],
 	"nil",
 	"talent",
 	"nil",
@@ -46,7 +52,7 @@ local AbilityToLevelUp=
 	"talent",
 }
 
-local TalentTree={
+local TalentTree = {
 	function()
 		return Talents[1]
 	end,
@@ -64,17 +70,30 @@ local TalentTree={
 -- check skill build vs current level
 utility.CheckAbilityBuild(AbilityToLevelUp)
 
+function BuybackUsageThink()
+	ability_item_usage_generic.BuybackUsageThink();
+end
+
+function CourierUsageThink()
+	ability_item_usage_generic.CourierUsageThink();
+end
+
 function AbilityLevelUpThink()
-	ability_item_usage_generic.AbilityLevelUpThink2(AbilityToLevelUp,TalentTree)
+	ability_item_usage_generic.AbilityLevelUpThink2(AbilityToLevelUp, TalentTree)
 end
 
 --------------------------------------
 -- Ability Usage Thinking
 --------------------------------------
-local cast={} cast.Desire={} cast.Target={} cast.Type={}
-local Consider ={}
-local CanCast={utility.NCanCast,utility.NCanCast,utility.NCanCast,utility.UCanCast}
-local enemyDisabled=utility.enemyDisabled
+local cast = {}
+cast.Desire = {}
+cast.Target = {}
+cast.Type = {}
+local Consider = {}
+local CanCast = { function(t)
+	return AbilityExtensions:StunCanCast(t, AbilitiesReal[1], false, true, true, false)
+end, utility.NCanCast, utility.NCanCast, utility.UCanCast }
+local enemyDisabled = utility.enemyDisabled
 
 function GetComboDamage()
 	return ability_item_usage_generic.GetComboDamage(AbilitiesReal)
@@ -84,39 +103,39 @@ function GetComboMana()
 	return ability_item_usage_generic.GetComboMana(AbilitiesReal)
 end
 
-
-function CourierUsageThink() 
+function CourierUsageThink()
 	ability_item_usage_generic.CourierUsageThink()
 end
 
-Consider[3]=function()
-	local abilityNumber=3
+Consider[3] = function()
+	local abilityNumber = 3
 	--------------------------------------
 	-- Generic Variable Setting
 	--------------------------------------
-	local ability=AbilitiesReal[abilityNumber];
-	
-	if not ability:IsFullyCastable() then
+	local ability = AbilitiesReal[abilityNumber];
+
+	if not ability:IsFullyCastable() or npcBot:HasModifier("modifier_windrunner_wind_walk") or
+		npcBot:HasModifier("modifier_shadow_demon_purge_slow") then
 		return BOT_ACTION_DESIRE_NONE, 0;
 	end
-	
+
 	local CastRange = ability:GetCastRange();
 	local CastPoint = ability:GetCastPoint();
-	
-	local allys = npcBot:GetNearbyHeroes( 1200, false, BOT_MODE_NONE );
-	local enemys = npcBot:GetNearbyHeroes(CastRange+300,true,BOT_MODE_NONE)
-	local WeakestEnemy,HeroHealth=utility.GetWeakestUnit(enemys)
-	local creeps = npcBot:GetNearbyCreeps(CastRange+300,true)
-	local WeakestCreep,CreepHealth=utility.GetWeakestUnit(creeps)
+
+	local allys = npcBot:GetNearbyHeroes(1200, false, BOT_MODE_NONE);
+	local enemys = npcBot:GetNearbyHeroes(CastRange + 300, true, BOT_MODE_NONE)
+	local WeakestEnemy, HeroHealth = utility.GetWeakestUnit(enemys)
+	local creeps = npcBot:GetNearbyCreeps(CastRange + 300, true)
+	local WeakestCreep, CreepHealth = utility.GetWeakestUnit(creeps)
 	--------------------------------------
 	-- Global high-priorty usage
 	--------------------------------------
 	--Try to kill enemy hero
-	if(npcBot:GetActiveMode() ~= BOT_MODE_RETREAT ) 
+	if (npcBot:GetActiveMode() ~= BOT_MODE_RETREAT)
 	then
-		if (WeakestEnemy~=nil and CanCast[abilityNumber]( WeakestEnemy ))
+		if (WeakestEnemy ~= nil and CanCast[abilityNumber](WeakestEnemy))
 		then
-			if(WeakestEnemy:GetHealth()/WeakestEnemy:GetMaxHealth() < 0.3)
+			if (WeakestEnemy:GetHealth() / WeakestEnemy:GetMaxHealth() < 0.3)
 			then
 				return BOT_ACTION_DESIRE_HIGH
 			end
@@ -127,31 +146,35 @@ Consider[3]=function()
 	-- Mode based usage
 	--------------------------------------
 	--protect myself
-	local enemys2 = npcBot:GetNearbyHeroes( 600, true, BOT_MODE_NONE );
+	local enemys2 = npcBot:GetNearbyHeroes(600, true, BOT_MODE_NONE);
 	-- If we're seriously retreating, see if we can land a stun on someone who's damaged us recently
-	if ( (npcBot:GetActiveMode() == BOT_MODE_RETREAT and npcBot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH) or #enemys2>0) 
+	if (
+		(npcBot:GetActiveMode() == BOT_MODE_RETREAT and npcBot:GetActiveModeDesire() >= BOT_MODE_DESIRE_HIGH) or #enemys2 >
+			0)
 	then
-		for _,npcEnemy in pairs( enemys )
-		do
-			if ( (npcBot:WasRecentlyDamagedByHero( npcEnemy, 2.0 ) and HealthPercentage < 0.4) or GetUnitToUnitDistance(npcBot,npcEnemy) < 400) 
+		for _, npcEnemy in pairs(enemys) do
+			if (
+				(npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) and HealthPercentage < 0.4) or
+					GetUnitToUnitDistance(npcBot, npcEnemy) < 400)
 			then
 				return BOT_ACTION_DESIRE_HIGH
 			end
 		end
 	end
-	
-	
+
+
 	-- If we're going after someone
-	if ( npcBot:GetActiveMode() == BOT_MODE_ROAM or
-		 npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
-		 npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
-		 npcBot:GetActiveMode() == BOT_MODE_ATTACK ) 
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
+		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
 	then
 		local npcEnemy = npcBot:GetTarget();
 
-		if ( npcEnemy ~= nil ) 
+		if (npcEnemy ~= nil)
 		then
-			if (npcEnemy:GetHealth()/npcEnemy:GetMaxHealth() < 0.4 or GetUnitToUnitDistance(npcBot,npcEnemy) > AttackRange + 200)
+			if (npcEnemy:GetHealth() / npcEnemy:GetMaxHealth() < 0.4 or GetUnitToUnitDistance(npcBot, npcEnemy) >
+				AttackRange + 200)
 			then
 				return BOT_ACTION_DESIRE_HIGH, npcEnemy
 			end
@@ -159,62 +182,70 @@ Consider[3]=function()
 	end
 
 	return BOT_ACTION_DESIRE_NONE, 0;
-	
 end
 
-Consider[4]=function()
+Consider[4] = function()
+	local ability = AbilitiesReal[4]
+	if not ability:IsFullyCastable() or ability:IsHidden() then
+		return 0
+	end
 
-	local abilityNumber=4
+	return 0
+end
+
+
+Consider[5] = function()
+
+	local abilityNumber = 4
 	--------------------------------------
 	-- Generic Variable Setting
 	--------------------------------------
-	local ability=AbilitiesReal[abilityNumber];
-	
+	local ability = AbilitiesReal[abilityNumber];
+
 	if not ability:IsFullyCastable() then
 		return BOT_ACTION_DESIRE_NONE, 0;
 	end
-	
+
 	local CastRange = ability:GetCastRange();
 	local Damage = ability:GetAbilityDamage();
-	
-	local HeroHealth=10000
-	local CreepHealth=10000
-	local allys = npcBot:GetNearbyHeroes( 1200, false, BOT_MODE_NONE );
-	local enemys = npcBot:GetNearbyHeroes(CastRange+300,true,BOT_MODE_NONE)
-	local WeakestEnemy,HeroHealth=utility.GetWeakestUnit(enemys)
-	local creeps = npcBot:GetNearbyCreeps(CastRange+300,true)
-	local WeakestCreep,CreepHealth=utility.GetWeakestUnit(creeps)
-	
+
+
+	local allys = npcBot:GetNearbyHeroes(1200, false, BOT_MODE_NONE);
+	local enemys = npcBot:GetNearbyHeroes(CastRange + 300, true, BOT_MODE_NONE)
+	local WeakestEnemy, HeroHealth = utility.GetWeakestUnit(enemys)
+	local creeps = npcBot:GetNearbyCreeps(CastRange + 300, true)
+	local WeakestCreep, CreepHealth = utility.GetWeakestUnit(creeps)
+
 	--try to kill enemy hero
-	if(npcBot:GetActiveMode() ~= BOT_MODE_RETREAT ) 
+	if (npcBot:GetActiveMode() ~= BOT_MODE_RETREAT)
 	then
-		if (WeakestEnemy~=nil)
+		if (WeakestEnemy ~= nil)
 		then
-			if ( CanCast[abilityNumber]( WeakestEnemy ) )
+			if (CanCast[abilityNumber](WeakestEnemy))
 			then
-				if(WeakestEnemy:GetHealth()/WeakestEnemy:GetMaxHealth() < 0.5 and #allys >=#enemys)
+				if (WeakestEnemy:GetHealth() / WeakestEnemy:GetMaxHealth() < 0.5 and #allys >= #enemys)
 				then
-					return BOT_ACTION_DESIRE_HIGH,WeakestEnemy; 
+					return BOT_ACTION_DESIRE_HIGH, WeakestEnemy;
 				end
 			end
 		end
 	end
-	
+
 	--------------------------------------
 	-- Mode based usage
 	--------------------------------------
 	-- If we're going after someone
-	if ( npcBot:GetActiveMode() == BOT_MODE_ROAM or
-		 npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
-		 npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
-		 npcBot:GetActiveMode() == BOT_MODE_ATTACK ) 
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
+		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
 	then
 		local npcEnemy = npcBot:GetTarget();
 
-		if ( npcEnemy ~= nil ) 
+		if (npcEnemy ~= nil)
 		then
-			if ( CanCast[abilityNumber]( npcEnemy ) and npcEnemy:GetHealth()/npcEnemy:GetMaxHealth() < 0.5
-			 and GetUnitToUnitDistance(npcBot,npcEnemy)< CastRange and #allys >=#enemys)
+			if (CanCast[abilityNumber](npcEnemy) and npcEnemy:GetHealth() / npcEnemy:GetMaxHealth() < 0.5
+				and GetUnitToUnitDistance(npcBot, npcEnemy) < CastRange and #allys >= #enemys)
 			then
 				return BOT_ACTION_DESIRE_MODERATE, npcEnemy;
 			end
@@ -222,5 +253,5 @@ Consider[4]=function()
 	end
 
 	return BOT_ACTION_DESIRE_NONE, 0;
-	
+
 end

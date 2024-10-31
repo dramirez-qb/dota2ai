@@ -5,11 +5,15 @@
 --------------------------------------
 -- General Initialization
 --------------------------------------
-require(GetScriptDirectory() .. "/ability_item_usage_generic")
+local ability_item_usage_generic = require(GetScriptDirectory() .. "/ability_item_usage_generic")
 local AbilityHelper = dofile(GetScriptDirectory() .. "/util/AbilityHelper")
 
 local enableDebug = true
 local npcBot = GetBot()
+if npcBot == nil or npcBot:IsIllusion() then
+	return
+end
+
 local talents = {}
 local abilities = {}
 local abilityHandles = {}
@@ -62,6 +66,14 @@ local talentTree = {
 -- check skill build vs current level
 AbilityHelper.checkAbilityBuild(abilityTree)
 
+function BuybackUsageThink()
+	ability_item_usage_generic.BuybackUsageThink();
+end
+
+function CourierUsageThink()
+	ability_item_usage_generic.CourierUsageThink();
+end
+
 function AbilityLevelUpThink()
 	ability_item_usage_generic.AbilityLevelUpThink2(abilityTree, talentTree)
 end
@@ -79,7 +91,7 @@ local healthPercent
 local activeMode
 local activeModeDesire
 
-local caster = {Desire = {}, Target = {}, Type = {}}
+local caster = { Desire = {}, Target = {}, Type = {} }
 local consider = {}
 local canCast = {
 	AbilityHelper.normalCanCast,
@@ -164,9 +176,9 @@ consider[1] = function()
 	if ((activeMode == BOT_MODE_RETREAT and activeModeDesire >= BOT_MODE_DESIRE_HIGH) or #nearyByEnemys > 0) then
 		for _, npcEnemy in pairs(enemys) do
 			if (canCast[abilityIndex](npcEnemy) and not isDisabled(npcEnemy)) then
-				if
-					(npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
-				 then
+				if (
+					npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
+				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy
 				end
 			end
@@ -213,13 +225,12 @@ consider[1] = function()
 	end
 
 	-- If we're pushing or defending a lane
-	if
-		(npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_TOP or npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_MID or
-			npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_BOT or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_TOP or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_MID or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_BOT)
-	 then
+	if (npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_TOP or npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_MID or
+		npcBot:GetActiveMode() == BOT_MODE_PUSH_TOWER_BOT or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_TOP or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_MID or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_TOWER_BOT)
+	then
 		if (isManaEnough and abilityHandles[abilityIndex]:GetLevel() >= 1) then
 			if (#enemys >= 1) then
 				if (canCast[abilityIndex](weakestEnemy) and not isDisabled(weakestEnemy)) then
@@ -238,11 +249,10 @@ consider[1] = function()
 	end
 
 	-- If we're going after someone
-	if
-		(npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
-			npcBot:GetActiveMode() == BOT_MODE_ATTACK)
-	 then
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
+		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
+	then
 		local npcEnemy = npcBot:GetTarget()
 
 		if (AbilityHelper.isValidTarget(npcEnemy) and canCast[abilityIndex](npcEnemy) and not isDisabled(npcEnemy)) then
@@ -321,9 +331,9 @@ consider[2] = function()
 	if ((activeMode == BOT_MODE_RETREAT and activeModeDesire >= BOT_MODE_DESIRE_HIGH) or #nearyByEnemys > 0) then
 		for _, npcEnemy in pairs(enemys) do
 			if (canCast[abilityIndex](npcEnemy)) then
-				if
-					(npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
-				 then
+				if (
+					npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
+				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy
 				end
 			end
@@ -370,13 +380,12 @@ consider[2] = function()
 	end
 
 	-- If we're pushing or defending a lane
-	if
-		(activeMode == BOT_MODE_PUSH_TOWER_TOP or activeMode == BOT_MODE_PUSH_TOWER_MID or
-			activeMode == BOT_MODE_PUSH_TOWER_BOT or
-			activeMode == BOT_MODE_DEFEND_TOWER_TOP or
-			activeMode == BOT_MODE_DEFEND_TOWER_MID or
-			activeMode == BOT_MODE_DEFEND_TOWER_BOT)
-	 then
+	if (activeMode == BOT_MODE_PUSH_TOWER_TOP or activeMode == BOT_MODE_PUSH_TOWER_MID or
+		activeMode == BOT_MODE_PUSH_TOWER_BOT or
+		activeMode == BOT_MODE_DEFEND_TOWER_TOP or
+		activeMode == BOT_MODE_DEFEND_TOWER_MID or
+		activeMode == BOT_MODE_DEFEND_TOWER_BOT)
+	then
 		if (#enemys + #creeps >= 3) then
 			if (isManaEnough and abilityHandles[abilityIndex]:GetLevel() >= 1) then
 				if (canCast[abilityIndex](weakestEnemy)) then
@@ -395,11 +404,10 @@ consider[2] = function()
 	end
 
 	-- If we're going after someone
-	if
-		(npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
-			npcBot:GetActiveMode() == BOT_MODE_ATTACK)
-	 then
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
+		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
+	then
 		local npcEnemy = npcBot:GetTarget()
 
 		if (AbilityHelper.isValidTarget(npcEnemy) and canCast[abilityIndex](npcEnemy) and not isDisabled(npcEnemy)) then
@@ -455,9 +463,9 @@ consider[3] = function()
 	if ((activeMode == BOT_MODE_RETREAT and activeModeDesire >= BOT_MODE_DESIRE_HIGH) or #nearyByEnemys > 0) then
 		for _, npcEnemy in pairs(enemys) do
 			if (canCast[abilityIndex](npcEnemy) and not isDisabled(npcEnemy)) then
-				if
-					(npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
-				 then
+				if (
+					npcBot:WasRecentlyDamagedByHero(npcEnemy, 2.0) or GetUnitToUnitDistance(npcBot, npcEnemy) < const.WARNING_DISTANCE)
+				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy:GetExtrapolatedLocation(castPoint)
 				end
 			end
@@ -485,13 +493,12 @@ consider[3] = function()
 	end
 
 	-- If we're pushing or defending a lane
-	if
-		(activeMode == BOT_MODE_PUSH_TOWER_TOP or activeMode == BOT_MODE_PUSH_TOWER_MID or
-			activeMode == BOT_MODE_PUSH_TOWER_BOT or
-			activeMode == BOT_MODE_DEFEND_TOWER_TOP or
-			activeMode == BOT_MODE_DEFEND_TOWER_MID or
-			activeMode == BOT_MODE_DEFEND_TOWER_BOT)
-	 then
+	if (activeMode == BOT_MODE_PUSH_TOWER_TOP or activeMode == BOT_MODE_PUSH_TOWER_MID or
+		activeMode == BOT_MODE_PUSH_TOWER_BOT or
+		activeMode == BOT_MODE_DEFEND_TOWER_TOP or
+		activeMode == BOT_MODE_DEFEND_TOWER_MID or
+		activeMode == BOT_MODE_DEFEND_TOWER_BOT)
+	then
 		if (isManaEnough and abilityHandles[abilityIndex]:GetLevel() >= 1) then
 			local locationAoE = npcBot:FindAoELocation(true, false, npcBot:GetLocation(), castRange, radius, 0, 0)
 			if (locationAoE.count >= 4) then
@@ -501,11 +508,10 @@ consider[3] = function()
 	end
 
 	-- If we're going after someone
-	if
-		(npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
-			npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
-			npcBot:GetActiveMode() == BOT_MODE_ATTACK)
-	 then
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
+		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
+		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
+	then
 		local locationAoE = npcBot:FindAoELocation(true, true, npcBot:GetLocation(), castRange, radius, 0, 0)
 		if (locationAoE.count >= 2) then
 			return BOT_ACTION_DESIRE_LOW, locationAoE.targetloc
@@ -603,10 +609,9 @@ consider[4] = function()
 	if (npcBot:GetActiveMode() == BOT_MODE_ROSHAN) then
 		local npcTarget = npcBot:GetAttackTarget()
 		if (AbilityHelper.isRoshan(npcTarget) and AbilityHelper.roshanCanCast(npcTarget) and not isDisabled(npcTarget)) then
-			if
-				(isManaEnough and
-					GetUnitToUnitDistance(npcBot, weakestEnemy) < radius - castPoint * weakestEnemy:GetCurrentMovementSpeed())
-			 then
+			if (isManaEnough and
+				GetUnitToUnitDistance(npcBot, weakestEnemy) < radius - castPoint * weakestEnemy:GetCurrentMovementSpeed())
+			then
 				return BOT_ACTION_DESIRE_LOW, npcTarget
 			end
 		end
@@ -642,11 +647,11 @@ consider[4] = function()
 	end
 
 	-- If we're going after someone
-	if(	npcBot:GetActiveMode() == BOT_MODE_ROAM or
+	if (npcBot:GetActiveMode() == BOT_MODE_ROAM or
 		npcBot:GetActiveMode() == BOT_MODE_TEAM_ROAM or
 		npcBot:GetActiveMode() == BOT_MODE_DEFEND_ALLY or
 		npcBot:GetActiveMode() == BOT_MODE_ATTACK)
-	 then
+	then
 		local npcEnemy = npcBot:GetTarget()
 
 		if (AbilityHelper.isValidTarget(npcEnemy) ~= nil and canCast[abilityIndex](npcEnemy) and not isDisabled(npcEnemy)) then
@@ -659,6 +664,7 @@ consider[4] = function()
 	return BOT_ACTION_DESIRE_NONE, 0
 end
 
+AbilityExtensions:AutoModifyConsiderFunction(npcBot, Consider, AbilitiesReal)
 function AbilityUsageThink()
 	-- Check if we're already using an ability
 	if (npcBot:IsUsingAbility() or npcBot:IsChanneling() or npcBot:IsSilenced()) then

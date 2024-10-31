@@ -1,6 +1,10 @@
-local minionutils = dofile( GetScriptDirectory().."/util/NewMinionUtil" )
+local minionutils = dofile(GetScriptDirectory() .. "/util/NewMinionUtil")
 
-function MinionThink(  hMinionUnit ) 
+function MinionThink(hMinionUnit)
+	local name = hMinionUnit:GetUnitName()
+	if name == "npc_dota_zeus_cloud" then
+		return
+	end
 	if minionutils.IsValidUnit(hMinionUnit) then
 		if hMinionUnit:IsIllusion() then
 			minionutils.IllusionThink(hMinionUnit);
@@ -10,4 +14,4 @@ function MinionThink(  hMinionUnit )
 			return;
 		end
 	end
-end	
+end
